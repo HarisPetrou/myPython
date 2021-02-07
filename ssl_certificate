@@ -1,0 +1,63 @@
+import socket
+import ssl
+import datetime
+import sys
+
+
+def check_date(certification):
+    ssl_date_fmt = r'%b %d %H:%M:%S %Y %Z'
+    cr_date = datetime.datetime.strptime(certification['notBefore'], ssl_date_fmt)
+    ex_date = datetime.datetime.strptime(certification['notAfter'], ssl_date_fmt)
+    today = datetime.datetime.today()
+    if cr_date <= today <= ex_date:
+        print("Date is valid!")
+        return True
+    else:
+        print("Date is valid!")
+        return False
+
+
+def check_issuer(certification):
+    issuersList = ["TERENA", "DigiCert Inc", "GlobalSign nv-sa", "Digital Signature Trust Co.", "Google Trust Services"]
+    issuer = dict(x[0] for x in certification['issuer'])
+    issuer_name = issuer['organizationName']
+    if issuer_name in issuersList:
+        print("Issuer is valid!")
+        return True
+    else:
+        print("Issuer is not valid!")
+        return False
+
+
+def check_subject(certification):
+    subjectFieldsList = ["countryName", "stateOrProvinceName", "organizationalUnitName", "localityName",
+                         "organizationName", "commonName", "dnQualifier", "serialNumber"]
+    subject = dict(x[0] for x in certification['subject'])
+    if (len(subject.keys()) >= 2) and (set(list(subject.keys())) <= set(subjectFieldsList)):
+       print("Subject is valid!")
+       return True
+    else:
+        print("Subject is not valid!")
+        return False
+
+
+def main():
+    hostname = 'www.netflix.com'
+    try:
+        ctx = ssl.create_default_context()
+        with ctx.wrap_socket(socket.socket(), server_hostname=hostname) as s:
+            s.settimeout(3.0)
+            s.connect((hostname, 443))
+            cert = s.getpeercert()
+    except:
+        sys.exit("Please try again -> Connection Error")
+    print("Certification checking for " + hostname)
+    version = cert['version']
+    if check_date(cert) and check_issuer(cert) and check_subject(cert) and version == 3:
+        print("The certificate is VALID ! !")
+    else:
+        print("The certificate is NOT VALID ! !")
+
+
+if __name__ == '__main__':
+    main()
