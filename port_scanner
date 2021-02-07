@@ -1,0 +1,70 @@
+import socket
+
+portList = [20, 21, 22, 23, 53, 80, 110, 443]
+urlList = ["www.hua.gr", "www.amazon.com", "www.cnn.com", "www.espn.com",
+           "www.netflix.com", "23.9.20.184", "www.google.gr", "www.nbg.gr"]
+
+
+def port_scanner(url, theport):
+    port = theport
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket.setdefaulttimeout(2)
+        target = socket.gethostbyname(url)
+        result = s.connect_ex((target, port))
+        if result == 0:
+            print(port)
+            answer = ask_user()
+            if answer:
+                try:
+                    request = \
+                        "GET / HTTP/1.1\r\n" \
+                        f"Host: {target}\r\n" \
+                        "Connection: keep-alive\r\n\r\n"
+                    s.send(request.encode())
+                    banner = s.recv(256).decode()
+                    return banner
+                except:
+                    print("Error during banner graping")
+                    return
+            else:
+                return
+    except:
+        return
+    s.close()
+
+
+def ask_user():
+    check = str(input("Banner grapping for the above port? (Y/N): ")).lower().strip()
+    try:
+        if check[0] == 'y':
+            return True
+        elif check[0] == 'n':
+            return False
+        else:
+            print('Invalid Input')
+            return ask_user()
+    except Exception as error:
+        print("Please enter valid inputs")
+        print(error)
+        return ask_user()
+
+
+def main():
+    inputList = []
+    number = int(input("How many inputs (addresses & ips) will you give me (ex. 2): "))
+    print("Now, give me some addresses or/and ips: ")
+    for i in range(0, number):
+        users_input = str(input())
+        inputList.append(users_input)
+    print("Results: ")
+    for url in inputList:
+        print(url + " has open ports (please wait):")
+        for port in portList:
+            results = port_scanner(url, port)
+            if results:
+                print(results)
+
+
+if __name__ == '__main__':
+    main()
